@@ -1,15 +1,29 @@
 /*auhor:Jakub Kontrik*/
+#include <stdio.h>
 #include <iostream>
 #include <unistd.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <csignal>
+#define BUFSIZE 1024
 
 int  main(int argc, char *argv[]){
     int arg;
-    std::string host;
+    const char *host;
     char *p;
     int port;
-    bool tcp_mode;
-    bool udp_mode;
+    int client_socket;
+    char buf[BUFSIZE];
+    int bytestx;
+    int bytesrx;
+    bool tcp_mode = false;
+    bool udp_mode = false;
+    struct sockaddr_in server_address;
+    struct hostent *server;
     if (argc != 7){
         std::cout << "Wrong number of arguments" << "\n";
         exit(1);
@@ -47,7 +61,45 @@ int  main(int argc, char *argv[]){
                 exit(1);
         }
     }
-    //debug print
-    std::cout << port << " " << host << "\n";
+    if ((server = gethostbyname(host)) == NULL) {
+        std::cerr << "ERROR: no such host as " << host << "\n";
+        exit(1);
+    }
+    bzero((char *) &server_address, sizeof(server_address));
+    server_address.sin_family = AF_INET;
+    bcopy((char *)server->h_addr, (char *)&server_address.sin_addr.s_addr, server->h_length);
+    server_address.sin_port = htons(port);
+    if(tcp_mode){
+        if ((client_socket = socket(AF_INET, SOCK_STREAM, 0)) <= 0)
+        {
+            perror("ERROR: socket");
+            exit(1);
+        }
+        if (connect(client_socket, (const struct sockaddr *) &server_address, sizeof(server_address)) != 0)
+        {
+            perror("ERROR: connect");
+            exit(1);        
+        }
+        while (1){
+            bzero(buf, BUFSIZE);
+            fgets(buf, BUFSIZE, stdin);
+            if(feof(stdin)){
+                bzero(buf, BUFSIZE);
+                strcpy(buf,"BYE\n");
+            }
+            bytestx = send(client_socket, buf, strlen(buf), 0);
+            if (bytestx < 0) perror("ERROR in sendto");
+            bzero(buf, BUFSIZE);
+            bytesrx = recv(client_socket, buf, BUFSIZE, 0);
+            if (bytesrx < 0) perror("ERROR in recvfrom");
+            std::cout << buf;
+            if(!strcmp(buf,"BYE\n")){
+                break;
+            }
+        }
+        close(client_socket);
+    }
+    else if (udp_mode){
+    }
     return 0;
 }
