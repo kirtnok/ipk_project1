@@ -10,6 +10,13 @@
 #include <netinet/in.h>
 #include <csignal>
 #define BUFSIZE 1024
+bool sigint = false;
+
+void sigint_handle(int signum){
+    (void)signum;
+    sigint = true;
+    std::cout << "\n";
+}
 
 int  main(int argc, char *argv[]){
     int arg;
@@ -25,6 +32,7 @@ int  main(int argc, char *argv[]){
     struct sockaddr_in server_address;
     struct hostent *server;
     socklen_t serverlen;
+    struct sigaction sigint_handler;
     if (argc != 7){
         std::cout << "Wrong number of arguments" << "\n";
         exit(1);
@@ -66,6 +74,10 @@ int  main(int argc, char *argv[]){
         std::cerr << "ERROR: no such host as " << host << "\n";
         exit(1);
     }
+    sigint_handler.sa_handler = sigint_handle;
+    sigemptyset(&sigint_handler.sa_mask);
+    sigint_handler.sa_flags = 0;
+    sigaction(SIGINT, &sigint_handler, NULL);
     bzero((char *) &server_address, sizeof(server_address));
     server_address.sin_family = AF_INET;
     bcopy((char *)server->h_addr, (char *)&server_address.sin_addr.s_addr, server->h_length);
@@ -84,7 +96,7 @@ int  main(int argc, char *argv[]){
         while (1){
             bzero(buf, BUFSIZE);
             fgets(buf, BUFSIZE, stdin);
-            if(feof(stdin)){
+            if(feof(stdin) || sigint){
                 bzero(buf, BUFSIZE);
                 strcpy(buf,"BYE\n");
             }
@@ -110,12 +122,13 @@ int  main(int argc, char *argv[]){
         while(1){
             bzero(buf, BUFSIZE);
             fgets(buf + 2, BUFSIZE - 2, stdin);
-            if(feof(stdin)){
+            if(feof(stdin) || sigint){
                 close(client_socket);
-                break;
+                exit(0);
             }
             buf[0] = '\0';
             buf[1] = (char)strlen(buf + 2);
+            std::cout << "Sending: " << (int)buf[1] << "\n";
             bytestx = sendto(client_socket, buf, (int)buf[1] + 2, 0, (struct sockaddr *) &server_address, serverlen);
             if (bytestx < 0) perror("ERROR: sendto");
             bzero(buf, BUFSIZE);
