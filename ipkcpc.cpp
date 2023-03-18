@@ -24,6 +24,7 @@ int  main(int argc, char *argv[]){
     bool udp_mode = false;
     struct sockaddr_in server_address;
     struct hostent *server;
+    socklen_t serverlen;
     if (argc != 7){
         std::cout << "Wrong number of arguments" << "\n";
         exit(1);
@@ -100,6 +101,34 @@ int  main(int argc, char *argv[]){
         close(client_socket);
     }
     else if (udp_mode){
+        serverlen = sizeof(server_address);
+        if ((client_socket = socket(AF_INET, SOCK_DGRAM, 0)) <= 0)
+        {
+            perror("ERROR: socket");
+            exit(1);
+        }
+        while(1){
+            bzero(buf, BUFSIZE);
+            fgets(buf + 2, BUFSIZE - 2, stdin);
+            if(feof(stdin)){
+                close(client_socket);
+                break;
+            }
+            buf[0] = '\0';
+            buf[1] = (char)strlen(buf + 2);
+            bytestx = sendto(client_socket, buf, (int)buf[1] + 2, 0, (struct sockaddr *) &server_address, serverlen);
+            if (bytestx < 0) perror("ERROR: sendto");
+            bzero(buf, BUFSIZE);
+            bytesrx = recvfrom(client_socket, buf, BUFSIZE, 0, (struct sockaddr *) &server_address, &serverlen);
+            if (bytesrx < 0) perror("ERROR: recvfrom");
+            if ((int)buf[1] == 0){
+                std::cout << "OK:" << buf+3 << "\n";
+            }
+            else{
+                std::cout << "ERR:" << buf+3 << "\n";
+            }
+        }
+        close(client_socket);
     }
     return 0;
 }
