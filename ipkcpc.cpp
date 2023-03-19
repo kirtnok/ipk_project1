@@ -12,6 +12,15 @@
 #define BUFSIZE 1024
 bool sigint = false;
 
+void print_help(){
+    std::cout << "Usage: ipkcpc -h <host> -p <port> -m <mode> [--help]" << "\n";
+    std::cout << "Options:" << "\n";
+    std::cout << "-h <host>   Hostname or IP address of the server" << "\n";
+    std::cout << "-p <port>   Port number of the server" << "\n";
+    std::cout << "-m <mode>   Mode, either tcp or udp" << "\n";
+    std::cout << "--help          Print this help" << "\n";
+}
+
 void sigint_handle(int signum){
     (void)signum;
     sigint = true;
@@ -34,8 +43,13 @@ int  main(int argc, char *argv[]){
     socklen_t serverlen;
     struct sigaction sigint_handler;
     bool exiting = false;
+    if(argc == 2 && !strcmp(argv[1],"--help")){
+        print_help();
+        exit(0);
+    }
     if (argc != 7){
-        std::cout << "Wrong number of arguments" << "\n";
+        std::cerr << "Wrong number of arguments" << "\n";
+        std::cout << "Use --help for help" << "\n";
         exit(1);
     }
     while ((arg = getopt(argc, argv, "h:p:m:"))!= -1){
@@ -48,8 +62,8 @@ int  main(int argc, char *argv[]){
             case 'p':
                 std::cout << "Port: " << optarg << "\n";
                 port = strtol(optarg,&p,10);
-                if (*p != '\0'){
-                    std::cout << "Error wrong port format\n";
+                if (*p != '\0' || port < 0 || port > 65535){
+                    std::cerr << "Error: wrong port format\n";
                     exit(1);
                 }
                 break;
@@ -62,12 +76,14 @@ int  main(int argc, char *argv[]){
                     tcp_mode = true;
                 }
                 else{
-                    std::cout << "Error wrong mode\n";
+                    std::cerr << "Error: wrong mode\n";
+                    std::cout << "Use --help for help" << "\n";
                     exit(1);
                 }
                 break;
             case '?':
-                std::cout << "Unknown option: " << (char)optopt << "\n";
+                std::cerr << "Error: unknown option: " << (char)optopt << "\n";
+                std::cout << "Use --help for help" << "\n";
                 exit(1);
         }
     }
@@ -108,10 +124,18 @@ int  main(int argc, char *argv[]){
                 strcpy(buf,"BYE\n");
             }
             bytestx = send(client_socket, buf, strlen(buf), 0);
-            if (bytestx < 0) perror("ERROR in sendto");
+            if (bytestx < 0){
+                perror("ERROR in sendto");
+                close(client_socket);
+                exit(1);
+            }
             bzero(buf, BUFSIZE);
             bytesrx = recv(client_socket, buf, BUFSIZE, 0);
-            if (bytesrx < 0) perror("ERROR in recvfrom");
+            if (bytesrx < 0){
+                perror("ERROR in recvfrom");
+                close(client_socket);
+                exit(1);
+            }
             std::cout << buf;
             if(!strcmp(buf,"BYE\n")){
                 break;
@@ -139,7 +163,7 @@ int  main(int argc, char *argv[]){
             }
             buf[strcspn(buf+2, "\n")+2] = 0;
             if(strlen(buf + 2) > 255){
-                std::cerr << "Error: payload is too long, max size of message is 255 characters\n";
+                std::cerr << "Warning: payload is too long, max size of message is 255 characters\n";
                 continue;
             }
             if(feof(stdin) || sigint){
@@ -149,10 +173,18 @@ int  main(int argc, char *argv[]){
             buf[0] = '\0';
             buf[1] = (char)strlen(buf + 2);
             bytestx = sendto(client_socket, buf, strlen(buf + 2) + 2, 0, (struct sockaddr *) &server_address, serverlen);
-            if (bytestx < 0) perror("ERROR: sendto");
+            if (bytestx < 0){
+                perror("ERROR: sendto");
+                close(client_socket);
+                exit(1);
+            }
             bzero(buf, BUFSIZE);
             bytesrx = recvfrom(client_socket, buf, BUFSIZE, 0, (struct sockaddr *) &server_address, &serverlen);
-            if (bytesrx < 0) perror("ERROR: recvfrom");
+            if (bytesrx < 0){
+                perror("ERROR: recvfrom");
+                close(client_socket);
+                exit(1);
+            }
             if ((int)buf[1] == 0){
                 std::cout << "OK:" << buf+3 << "\n";
             }
