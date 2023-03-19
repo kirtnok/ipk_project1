@@ -13,62 +13,55 @@
 bool sigint = false;
 
 void print_help(){
-    std::cout << "Usage: ipkcpc -h <host> -p <port> -m <mode> [--help]" << "\n";
-    std::cout << "Options:" << "\n";
-    std::cout << "-h <host>   Hostname or IP address of the server" << "\n";
-    std::cout << "-p <port>   Port number of the server" << "\n";
-    std::cout << "-m <mode>   Mode, either tcp or udp" << "\n";
-    std::cout << "--help          Print this help" << "\n";
+    std::cout << "Usage: ipkcpc -h <host> -p <port> -m <mode> [--help]" << std::endl;
+    std::cout << "Options:" << std::endl;
+    std::cout << "-h <host>   Hostname or IP address of the server" << std::endl;
+    std::cout << "-p <port>   Port number of the server" << std::endl;
+    std::cout << "-m <mode>   Mode, either tcp or udp" << std::endl;
+    std::cout << "--help          Print this help" << std::endl;
 }
 
 void sigint_handle(int signum){
     (void)signum;
     sigint = true;
-    std::cout << "\n";
+    std::cout << std::endl;
 }
 
 int  main(int argc, char *argv[]){
-    int arg;
+    int arg, port, client_socket, bytestx, bytesrx;
     const char *host;
     char *p;
-    int port;
-    int client_socket;
     char buf[BUFSIZE];
-    int bytestx;
-    int bytesrx;
     bool tcp_mode = false;
     bool udp_mode = false;
+    bool exiting = false;
     struct sockaddr_in server_address;
     struct hostent *server;
     socklen_t serverlen;
     struct sigaction sigint_handler;
-    bool exiting = false;
-    if(argc == 2 && !strcmp(argv[1],"--help")){
+    
+    if(argc == 2 && !strcmp(argv[1], "--help")){
         print_help();
         exit(0);
     }
     if (argc != 7){
-        std::cerr << "Wrong number of arguments" << "\n";
-        std::cout << "Use --help for help" << "\n";
+        std::cerr << "Wrong number of arguments" << std::endl;
+        std::cout << "Use --help for help" << std::endl;
         exit(1);
     }
     while ((arg = getopt(argc, argv, "h:p:m:"))!= -1){
         switch (arg){
             case 'h':
-                //debug print
-                std::cout << "Host: " << optarg << "\n";
                 host = optarg;
                 break;
             case 'p':
-                std::cout << "Port: " << optarg << "\n";
                 port = strtol(optarg,&p,10);
                 if (*p != '\0' || port < 0 || port > 65535){
-                    std::cerr << "Error: wrong port format\n";
+                    std::cerr << "Error: wrong port format" << std::endl;
                     exit(1);
                 }
                 break;
             case 'm':
-                std::cout << "Mode: " << optarg << "\n";
                 if (!strcmp(optarg,"udp")){
                     udp_mode = true;
                 }
@@ -76,37 +69,38 @@ int  main(int argc, char *argv[]){
                     tcp_mode = true;
                 }
                 else{
-                    std::cerr << "Error: wrong mode\n";
-                    std::cout << "Use --help for help" << "\n";
+                    std::cerr << "Error: wrong mode" << std::endl;
+                    std::cout << "Use --help for help" << std::endl;
                     exit(1);
                 }
                 break;
             case '?':
-                std::cerr << "Error: unknown option: " << (char)optopt << "\n";
-                std::cout << "Use --help for help" << "\n";
+                std::cerr << "Error: unknown option: " << (char)optopt << std::endl;
+                std::cout << "Use --help for help" << std::endl;
                 exit(1);
         }
     }
-    if ((server = gethostbyname(host)) == NULL) {
-        std::cerr << "ERROR: no such host as " << host << "\n";
+
+    if ((server = gethostbyname(host)) == NULL){
+        std::cerr << "ERROR: no such host as " << host << std::endl;
         exit(1);
     }
     sigint_handler.sa_handler = sigint_handle;
     sigemptyset(&sigint_handler.sa_mask);
     sigint_handler.sa_flags = 0;
     sigaction(SIGINT, &sigint_handler, NULL);
+
     bzero((char *) &server_address, sizeof(server_address));
     server_address.sin_family = AF_INET;
     bcopy((char *)server->h_addr, (char *)&server_address.sin_addr.s_addr, server->h_length);
     server_address.sin_port = htons(port);
+    
     if(tcp_mode){
-        if ((client_socket = socket(AF_INET, SOCK_STREAM, 0)) <= 0)
-        {
+        if ((client_socket = socket(AF_INET, SOCK_STREAM, 0)) <= 0){
             perror("ERROR: socket");
             exit(1);
         }
-        if (connect(client_socket, (const struct sockaddr *) &server_address, sizeof(server_address)) != 0)
-        {
+        if (connect(client_socket, (const struct sockaddr *) &server_address, sizeof(server_address)) != 0){
             perror("ERROR: connect");
             exit(1);        
         }
@@ -114,7 +108,7 @@ int  main(int argc, char *argv[]){
             bzero(buf, BUFSIZE);
             fgets(buf, BUFSIZE, stdin);
             if (strlen(buf) == BUFSIZE-1 && buf[BUFSIZE-2] != '\n'){
-                std::cerr << "Error: input exceeds limit, max number of characters is " << BUFSIZE-2 << "\n";
+                std::cerr << "Error: input exceeds limit, max number of characters is " << BUFSIZE-2 << std::endl;
                 bzero(buf, BUFSIZE);
                 strcpy(buf,"BYE\n");
                 exiting = true;
@@ -157,13 +151,13 @@ int  main(int argc, char *argv[]){
             bzero(buf, BUFSIZE);
             fgets(buf + 2, BUFSIZE-2, stdin);
             if (strlen(buf + 2) == BUFSIZE-3 && buf[BUFSIZE-2] != '\n'){
-                std::cerr << "Error: input exceeds limit, max number of characters is " << BUFSIZE-4 << "\n";
+                std::cerr << "Error: input exceeds limit, max number of characters is " << BUFSIZE-4 << std::endl;
                 close(client_socket);
                 exit(1);
             }
             buf[strcspn(buf+2, "\n")+2] = 0;
             if(strlen(buf + 2) > 255){
-                std::cerr << "Warning: payload is too long, max size of message is 255 characters\n";
+                std::cerr << "Warning: payload is too long, max size of message is 255 characters" << std::endl;
                 continue;
             }
             if(feof(stdin) || sigint){
@@ -186,10 +180,10 @@ int  main(int argc, char *argv[]){
                 exit(1);
             }
             if ((int)buf[1] == 0){
-                std::cout << "OK:" << buf+3 << "\n";
+                std::cout << "OK:" << buf+3 << std::endl;
             }
             else{
-                std::cout << "ERR:" << buf+3 << "\n";
+                std::cout << "ERR:" << buf+3 << std::endl;
             }
         }
         close(client_socket);
