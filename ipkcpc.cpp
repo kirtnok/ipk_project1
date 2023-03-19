@@ -33,6 +33,7 @@ int  main(int argc, char *argv[]){
     struct hostent *server;
     socklen_t serverlen;
     struct sigaction sigint_handler;
+    bool exiting = false;
     if (argc != 7){
         std::cout << "Wrong number of arguments" << "\n";
         exit(1);
@@ -96,6 +97,12 @@ int  main(int argc, char *argv[]){
         while (1){
             bzero(buf, BUFSIZE);
             fgets(buf, BUFSIZE, stdin);
+            if (strlen(buf) == BUFSIZE-1 && buf[BUFSIZE-2] != '\n'){
+                std::cerr << "Error: input exceeds limit, max number of characters is " << BUFSIZE-2 << "\n";
+                bzero(buf, BUFSIZE);
+                strcpy(buf,"BYE\n");
+                exiting = true;
+            }
             if(feof(stdin) || sigint){
                 bzero(buf, BUFSIZE);
                 strcpy(buf,"BYE\n");
@@ -111,6 +118,9 @@ int  main(int argc, char *argv[]){
             }
         }
         close(client_socket);
+        if (exiting){
+            exit(1);
+        }
     }
     else if (udp_mode){
         serverlen = sizeof(server_address);
@@ -121,7 +131,17 @@ int  main(int argc, char *argv[]){
         }
         while(1){
             bzero(buf, BUFSIZE);
-            fgets(buf + 2, BUFSIZE - 2, stdin);
+            fgets(buf + 2, BUFSIZE-2, stdin);
+            if (strlen(buf + 2) == BUFSIZE-3 && buf[BUFSIZE-2] != '\n'){
+                std::cerr << "Error: input exceeds limit, max number of characters is " << BUFSIZE-4 << "\n";
+                close(client_socket);
+                exit(1);
+            }
+            buf[strcspn(buf+2, "\n")+2] = 0;
+            if(strlen(buf + 2) > 255){
+                std::cerr << "Error: payload is too long, max size of message is 255 characters\n";
+                continue;
+            }
             if(feof(stdin) || sigint){
                 close(client_socket);
                 exit(0);
