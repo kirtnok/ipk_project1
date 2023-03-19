@@ -148,8 +148,7 @@ int  main(int argc, char *argv[]){
             }
             buf[0] = '\0';
             buf[1] = (char)strlen(buf + 2);
-            std::cout << "Sending: " << (int)buf[1] << "\n";
-            bytestx = sendto(client_socket, buf, (int)buf[1] + 2, 0, (struct sockaddr *) &server_address, serverlen);
+            bytestx = sendto(client_socket, buf, strlen(buf + 2) + 2, 0, (struct sockaddr *) &server_address, serverlen);
             if (bytestx < 0) perror("ERROR: sendto");
             bzero(buf, BUFSIZE);
             bytesrx = recvfrom(client_socket, buf, BUFSIZE, 0, (struct sockaddr *) &server_address, &serverlen);
