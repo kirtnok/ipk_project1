@@ -27,7 +27,6 @@ void print_help(){
 void sigint_handle(int signum){
     (void)signum;
     sigint = true;
-    std::cout << std::endl;
 }
 
 int  main(int argc, char *argv[]){
