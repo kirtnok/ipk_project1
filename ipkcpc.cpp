@@ -1,4 +1,9 @@
-/*auhor:Jakub Kontrik*/
+/*ipkcpc.cpp
+* auhor: Jakub Kontrik
+* login: xkontr02
+* brief: client for ipk calculator
+*/
+
 #include <stdio.h>
 #include <iostream>
 #include <unistd.h>
@@ -9,7 +14,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <csignal>
-//max number size of buffer
+//max size of buffer
 #define BUFSIZE 1024
 //global flag for hadling SIGINT
 bool sigint = false;
