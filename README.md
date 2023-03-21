@@ -38,6 +38,6 @@ Testing has been done manualy mostly with edgecases.
 For example: input bigger than payload or buffer size, not existing server, SIGINT at random state, eof in input, wrong arguments... 
 
 ## Bibliography
-[C++ Documentation](https://learn.microsoft.com/en-us/cpp/cpp/?view=msvc-170)
+[C++ Documentation](https://learn.microsoft.com/en-us/cpp/cpp/?view=msvc-170)  
 [STUBS](https://git.fit.vutbr.cz/NESFIT/IPK-Projekty/src/branch/master/Stubs)
 
