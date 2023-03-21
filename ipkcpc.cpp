@@ -159,6 +159,16 @@ int  main(int argc, char *argv[]){
             perror("ERROR: socket");
             exit(1);
         }
+        //setting timeout for udp connection
+        struct timeval timeout;
+        timeout.tv_sec = 10;
+        timeout.tv_usec = 0;
+
+        if (setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
+            std::cerr << "Unable to set UDP socket timeout" << std::endl;
+            exit(1);
+        }
+
         while(1){
             bzero(buf, BUFSIZE);
             // first 2 bytes are reserved, used pointer arithmetic
