@@ -2,26 +2,22 @@
 
 ## Limitations
 Because I am using static buffer, client input message is limited by default for 1022 chars for TCP.  
-For UDP it is only 1020 chars because of protocol.
+For UDP it is only 1020 (-2) chars because of protocol.
 Another limitation is when program is in TCP mode and send or recieve  
-fails program catches error and terminates, that shutdown host server.(atleast given test serever)
+fails program catches error and terminates, that shutdowns host server (at least given test serever).
+Another limitation is that this program is compilable and runnable only for linux. Because of used libraries.
 
 ## Changes
-
-### Commit: Add changelog  
-Date:   Mar 21 2023
-    
-    -added changelog, also with history of commits
 
 ### Commit: Remove newline from output after SIGINT signal  
 Date:   Mar 21 2023
     
-    -removed newline after C-c as stated in forum
+    - removed newline after C-c as stated in forum
     
 ### Commit: Add timeout for UDP connection  
 Date:   Mar 21 2023
     
-    -added socket modification with setsockopt, now program timeouts after 10 seconds of not recieving response
+    - added socket modification with setsockopt, now program timeouts after 10 seconds of not recieving response
 
 ### Commit: Add commets  
 Date:   Mar 20 2023
@@ -55,6 +51,7 @@ Date:   Mar 19 2023
 
     - added check after fgets so program work with input bigger than buffer size
     - added user limit for UDP payload message
+    - added warning for user when payload is exceeded
     - added flag and check if program had error state but not terminating one
 
 ### Commit: Add SIGINT hadling  
